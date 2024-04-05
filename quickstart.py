@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import json
 import jwt
-from flask import Flask, redirect, url_for, session, request
+from flask import Flask, redirect, url_for, session, request, render_template
 
 CLIENT_ID = '5795616728-aubtunb2krroa3khk2b6ph0a0od6mchv.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
@@ -19,13 +19,16 @@ SCOPES = ['openid',
     'https://www.googleapis.com/auth/userinfo.email', 
     'https://www.googleapis.com/auth/userinfo.profile']
 
+import mimetypes
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
 
-app = Flask(__name__)
+app = Flask(__name__,
+            template_folder='C:\\Users\\pavel.skala\\PROJEKT-PROGRAMOVANI-BE\\www',
+            static_folder='C:\\Users\\pavel.skala\\PROJEKT-PROGRAMOVANI-BE\\www\\assets',
+            static_url_path='/assets')
 
-
-@app.route('/')
-def index():
-    return 'Welcome to the app!'
+            
 
 def to_dict(credentials):
     """
@@ -38,6 +41,15 @@ def to_dict(credentials):
     dictRepr = json.loads(jsonRepr)
     print(dictRepr)
     return dictRepr
+
+
+@app.route('/')
+def index():
+    if 'credentials' in session.keys():
+        return render_template('index.html')
+    else:
+        return redirect(url_for('login'))
+
 
 @app.route('/login')
 def login():
