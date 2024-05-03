@@ -1,4 +1,5 @@
 import os.path
+import config
 import os
 
 from google.auth.transport.requests import Request
@@ -9,15 +10,20 @@ from googleapiclient.errors import HttpError
 import json
 import jwt
 from flask import Flask, redirect, url_for, session, request, render_template
+from flask_cors import CORS
+import requests
+
+import mongo
 
 CLIENT_ID = '5795616728-aubtunb2krroa3khk2b6ph0a0od6mchv.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
 
 # The authorization URL and redirect URL must match the ones you specified when you created the OAuth client ID
 AUTH_URL = 'https://accounts.google.com/o/oauth2/auth'
-SCOPES = ['openid', 
+SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email', 
-    'https://www.googleapis.com/auth/userinfo.profile']
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'openid']
 
 import mimetypes
 mimetypes.add_type('application/javascript', '.js')
@@ -28,6 +34,8 @@ app = Flask(__name__,
             static_folder='C:\\Users\\pavel.skala\\PROJEKT-PROGRAMOVANI-BE\\www\\assets',
             static_url_path='/assets')
 
+
+cors = CORS(app, resources={r"/users": {"origins": "http://localhost:5173"}})
             
 
 def to_dict(credentials):
@@ -39,14 +47,20 @@ def to_dict(credentials):
     """
     jsonRepr = credentials.to_json()
     dictRepr = json.loads(jsonRepr)
-    print(dictRepr)
-    return dictRepr
+    # print(dictRepr)
+    user_data = get_user_data(dictRepr["token"])
+    return dictRepr, user_data
 
+def get_user_data(token):
+    res = requests.get(f"https://www.googleapis.com/oauth2/v3/userinfo?access_token={token}")
+    response = json.loads(res.text)
+    return response
 
 @app.route('/')
 def index():
     if 'credentials' in session.keys():
-        return render_template('index.html')
+        return redirect(config.REDIRECT_URL)
+        # return render_template('index.html')
     else:
         return redirect(url_for('login'))
 
@@ -63,6 +77,7 @@ def login():
 
     # Save the state so we can verify the request later
     session['state'] = state
+
 
     return redirect(authorization_url)
 
@@ -83,7 +98,7 @@ def callback():
 
     # Save the credentials to the session
     credentials = flow.credentials
-    session['credentials'] = to_dict(credentials)
+    session['credentials']  = to_dict(credentials)
 
     return redirect(url_for('index'))
 
@@ -93,6 +108,28 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+
+
+@app.route('/topics', methods=['POST'])
+def create_topic():
+    response = request.json
+
+    name = response.get("name")
+    year = response.get("year")
+    topic = {
+        "name": name,
+        "year": year
+    }
+
+    mongo.insert("topics", topic)
+    return response
+
+@app.route('/topics', methods=['GET'])
+def get_topics():
+    topics = list(mongo.db["topics"].find({},{"_id":0}))
+    return topics
+
+    
     
 
 if __name__ == '__main__': 

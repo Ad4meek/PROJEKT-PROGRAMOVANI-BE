@@ -10,3 +10,6 @@ app = Flask(__name__,
             static_url_path='/assets')
 
 client = MongoClient("localhost", 27017)
+db = client.flack_db
+todos = db.todos
+
