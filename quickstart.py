@@ -35,7 +35,7 @@ app = Flask(__name__,
             static_url_path='/assets')
 
 
-cors = CORS(app, resources={r"/users": {"origins": "http://localhost:5173"}})
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
             
 
 def to_dict(credentials):
@@ -59,8 +59,7 @@ def get_user_data(token):
 @app.route('/')
 def index():
     if 'credentials' in session.keys():
-        return redirect(config.REDIRECT_URL)
-        # return render_template('index.html')
+        return render_template('index.html')
     else:
         return redirect(url_for('login'))
 
@@ -100,7 +99,11 @@ def callback():
     credentials = flow.credentials
     session['credentials']  = to_dict(credentials)
 
-    return redirect(url_for('index'))
+    email = session["credentials"][1]["email"]
+    if email == "ad4meek@gmail.com":
+        return redirect(config.REDIRECT_URL["teacher"])
+
+    return redirect(config.REDIRECT_URL["student"])
 
 
 @app.route('/logout')
@@ -116,9 +119,15 @@ def create_topic():
 
     name = response.get("name")
     year = response.get("year")
+    description = response.get("description")
+    type_work = response.get("type")
+    subject = response.get("subject")
     topic = {
         "name": name,
-        "year": year
+        "year": year,
+        "descrition": description,
+        "type": type_work,
+        "¨subject": subject
     }
 
     mongo.insert("topics", topic)
