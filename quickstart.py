@@ -15,6 +15,8 @@ import requests
 
 import mongo
 
+from bson import json_util
+
 CLIENT_ID = '5795616728-aubtunb2krroa3khk2b6ph0a0od6mchv.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
 
@@ -127,7 +129,7 @@ def create_topic():
         "year": year,
         "descrition": description,
         "type": type_work,
-        "¨subject": subject
+        "subject": subject
     }
 
     mongo.insert("topics", topic)
@@ -135,10 +137,14 @@ def create_topic():
 
 @app.route('/topics', methods=['GET'])
 def get_topics():
-    topics = list(mongo.db["topics"].find({},{"_id":0}))
-    return topics
+    topics = mongo.db["topics"].find({},{})
+    parsed = parse_json(topics)
+    print(parsed)
 
-    
+    return parsed
+
+def parse_json(data):
+    return json.loads(json_util.dumps(data))
     
 
 if __name__ == '__main__': 
