@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import json
 import jwt
-from flask import Flask, redirect, url_for, session, request, render_template
+from flask import Flask, redirect, url_for, session, request, render_template, jsonify, make_response
 from flask_cors import CORS
 import requests
 
@@ -39,7 +39,6 @@ app = Flask(__name__,
 
 
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
-            
 
 def to_dict(credentials):
     """
@@ -139,23 +138,38 @@ def create_topic():
 @app.route('/topics', methods=['GET'])
 def get_topics():
     topics = mongo.db["topics"].find()
-    print(topics)
+
     parsed = parse_json(topics)
-    print(parsed)
 
     return parsed
 
 @app.route('/topics/<id>', methods=['GET'])
 def get_one_topic(id):
-    print(id)
+    # print(id)
     result = mongo.db["topics"].find_one({'_id': ObjectId(id)})
 
-    print(result)
-    # topics = mongo.db["topics"].find({},{})
+    # print(result)
     parsed = parse_json(result)
-    print(parsed)
+    # print(parsed)
 
     return parsed
+
+@app.route('/topics/<id>', methods=['DELETE'])
+def delete_topic(id):
+    print(id)
+
+    result = mongo.db["topics"].delete_one({"_id": ObjectId(id)})
+
+    response_data = {
+        "message": "asdfasdas",
+        "data": {
+
+        }
+    }
+
+    response = make_response(jsonify(response_data), 200)
+
+    return response
 
 
 def parse_json(data):
