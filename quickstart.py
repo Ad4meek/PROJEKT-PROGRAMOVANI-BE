@@ -148,7 +148,7 @@ def get_topics():
 @app.route('/topics/<id>', methods=['GET'])
 def get_one_topic(id):
     print(id)
-    result = mongo.db["topics"].find_one({'_id': ObjectId("663de1b9b3545c3dd9da0982")})
+    result = mongo.db["topics"].find_one({'_id': ObjectId(id)})
 
     print(result)
     # topics = mongo.db["topics"].find({},{})
