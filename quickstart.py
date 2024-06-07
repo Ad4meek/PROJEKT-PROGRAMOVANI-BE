@@ -12,6 +12,7 @@ import jwt
 from flask import Flask, redirect, url_for, session, request, render_template, jsonify, make_response
 from flask_cors import CORS
 import requests
+from datetime import timedelta
 
 import mongo
 
@@ -32,13 +33,12 @@ import mimetypes
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 
-app = Flask(__name__,
-            template_folder='C:\\Users\\pavel.skala\\PROJEKT-PROGRAMOVANI-BE\\www',
-            static_folder='C:\\Users\\pavel.skala\\PROJEKT-PROGRAMOVANI-BE\\www\\assets',
-            static_url_path='/assets')
+app = Flask(__name__)
 
 
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+
 
 def to_dict(credentials):
     """
@@ -58,6 +58,13 @@ def get_user_data(token):
     response = json.loads(res.text)
     return response
 
+@app.route('/setcookie', methods = ['POST', 'GET'])
+def setCookie():
+    user_info_str = json.dumps(session["credentials"][1])
+    response = make_response() # We can also render new page with render_template
+    response.set_cookie(key="user_info", value=user_info_str, secure=True, httponly=True, samesite="None")
+    return response
+
 @app.route('/')
 def index():
     if 'credentials' in session.keys():
@@ -68,6 +75,7 @@ def index():
 
 @app.route('/login')
 def login():
+    session.permanent = True
     # Create the OAuth flow object
     flow = InstalledAppFlow.from_client_secrets_file(
         "credentials.json", scopes=SCOPES)
@@ -102,6 +110,22 @@ def callback():
     session['credentials']  = to_dict(credentials)
 
     email = session["credentials"][1]["email"]
+    user_email = email
+    print(user_email)
+
+    response_data = {
+        "message": "succesfull",
+        "data": {
+
+        }
+    }
+
+
+    
+    # resp.set_cookie('session_token', user_info_str, secure=True, httponly=True, samesite="None")
+    print(request.cookies.get("name"))
+    
+
     if email == "ad4meek@gmail.com":
         return redirect(config.REDIRECT_URL["teacher"])
 
@@ -129,7 +153,9 @@ def create_topic():
         "year": year,
         "descrition": description,
         "type": type_work,
-        "subject": subject
+        "subject": subject,
+        "status": False,
+        "student": None
     }
 
     mongo.insert("topics", topic)
@@ -168,6 +194,24 @@ def delete_topic(id):
     }
 
     response = make_response(jsonify(response_data), 200)
+
+    return response
+
+@app.route('/assign', methods=['POST'])
+def assign_topic():
+    response = request.json
+
+    user_info = request.cookies.get("user_info")
+    print(user_info)
+
+    id = response.get("id")
+
+    topic = get_one_topic(id)
+
+    newValues = { "$set": { "status": True, "student": user_info.name } }
+    print(newValues)
+
+    mongo.db["topics"].update_one(id, newValues)
 
     return response
 
