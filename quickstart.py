@@ -19,6 +19,8 @@ import mongo
 from bson import json_util
 from bson.objectid import ObjectId
 
+import ast
+
 CLIENT_ID = '5795616728-aubtunb2krroa3khk2b6ph0a0od6mchv.apps.googleusercontent.com'
 CLIENT_SECRET = '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'
 
@@ -60,9 +62,10 @@ def get_user_data(token):
 
 @app.route('/setcookie', methods = ['POST', 'GET'])
 def setCookie():
-    user_info_str = json.dumps(session["credentials"][1])
+    email = json.dumps(session["credentials"][1]["name"])
+    print(email)
     response = make_response() # We can also render new page with render_template
-    response.set_cookie(key="user_info", value=user_info_str, secure=True, httponly=True, samesite="None")
+    response.set_cookie(key="user_info", value=email, secure=True, httponly=True, samesite="None")
     return response
 
 @app.route('/')
@@ -126,7 +129,7 @@ def callback():
     print(request.cookies.get("name"))
     
 
-    if email == "ad4meek@gmail.com":
+    if email == "pavelskalamobil@gmail.com":
         return redirect(config.REDIRECT_URL["teacher"])
 
     return redirect(config.REDIRECT_URL["student"])
@@ -151,7 +154,7 @@ def create_topic():
     topic = {
         "name": name,
         "year": year,
-        "descrition": description,
+        "description": description,
         "type": type_work,
         "subject": subject,
         "status": False,
@@ -197,21 +200,35 @@ def delete_topic(id):
 
     return response
 
-@app.route('/assign', methods=['POST'])
-def assign_topic():
+@app.route('/topics/<id>', methods=['PUT'])
+def update_topic(id):
+    print(id)
+    
+    response = request.json
+
+    updated_keys = response.keys()
+
+    newValues = {"$set": {} }
+    for key in updated_keys:
+        newValues["$set"][key] = response.get(key)
+
+    mongo.db["topics"].update_one({'_id': ObjectId(id)}, newValues)
+
+    return response
+
+@app.route('/choose', methods=['POST'])
+def choose_topic():
     response = request.json
 
     user_info = request.cookies.get("user_info")
+    
     print(user_info)
+    email = ast.literal_eval(str(user_info))
 
-    id = response.get("id")
-
-    topic = get_one_topic(id)
-
-    newValues = { "$set": { "status": True, "student": user_info.name } }
+    newValues = { "$set": { "status": True, "student": email } }
     print(newValues)
 
-    mongo.db["topics"].update_one(id, newValues)
+    mongo.db["topics"].update_one({'_id': ObjectId(response)}, newValues)
 
     return response
 
