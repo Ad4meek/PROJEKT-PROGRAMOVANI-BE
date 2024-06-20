@@ -7,7 +7,8 @@ username = 'skolaoffline'  # If authentication is required
 password = 'admin'  # If authentication is required
 
 # Create a MongoClient instance
-client = MongoClient("mongodb+srv://skolaoffline:admin@cluster0.qy9ucuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+# client = MongoClient("mongodb+srv://skolaoffline:admin@cluster0.qy9ucuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb+srv://skolaoffline:admin@cluster0.inyn2wg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
 try:
     client.admin.command("ping")
